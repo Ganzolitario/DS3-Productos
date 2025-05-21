@@ -18,7 +18,6 @@ public class ProductController {
     }
 
     @GetMapping("/products")
-    @CrossOrigin
     public List<Product> getProducts() {
         return productService.getProducts();
     }
@@ -29,20 +28,17 @@ public class ProductController {
     }
 
     @PutMapping("/product/{id}")
-    @CrossOrigin
     public Product updateProduct(@RequestBody() Product product, @PathVariable Long id) {
         return productService.updateProduct(product);
     }
 
     @PostMapping("/products")
-    @CrossOrigin
     public ResponseEntity<Product> addNew(@RequestBody() Product product) {
         Product newProduct = productService.addProduct(product);
         return  ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
     }
 
     @DeleteMapping("/product/{id}")
-    @CrossOrigin
     public void deleteProduct(@PathVariable ("id") Long id) {
         productService.deleteProduct(id);
     }
