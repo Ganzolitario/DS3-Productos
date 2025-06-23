@@ -1,7 +1,10 @@
 package com.example.spring_api.controllers;
 
 import com.example.spring_api.Product;
+import com.example.spring_api.dto.TokenValidationResponse;
 import com.example.spring_api.services.ProductService;
+import com.example.spring_api.service.TokenValidationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +15,9 @@ import java.util.List;
 public class ProductController {
 
     private ProductService productService;
+    
+    @Autowired
+    private TokenValidationService tokenValidationService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
@@ -28,20 +34,48 @@ public class ProductController {
     }
 
     @PutMapping("/product/{id}")
-    public Product updateProduct(@RequestBody() Product product, @PathVariable Long id) {
-        return productService.updateProduct(product);
+    public ResponseEntity<?> updateProduct(@RequestBody() Product product, 
+                                         @PathVariable Long id,
+                                         @RequestHeader(value = "Authorization", required = false) String authorization) {
+        
+        TokenValidationResponse validation = tokenValidationService.validateAdminToken(authorization);
+        
+        if (!validation.isValid() || !validation.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only administrators can update products. " + validation.getMessage());
+        }
+        
+        Product updatedProduct = productService.updateProduct(product);
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @PostMapping("/products")
-    public ResponseEntity<Product> addNew(@RequestBody() Product product) {
+    public ResponseEntity<?> addNew(@RequestBody() Product product,
+                                   @RequestHeader(value = "Authorization", required = false) String authorization) {
+        
+        TokenValidationResponse validation = tokenValidationService.validateAdminToken(authorization);
+        
+        if (!validation.isValid() || !validation.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only administrators can add products. " + validation.getMessage());
+        }
+        
         Product newProduct = productService.addProduct(product);
-        return  ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
     }
 
     @DeleteMapping("/product/{id}")
-    public void deleteProduct(@PathVariable ("id") Long id) {
+    public ResponseEntity<?> deleteProduct(@PathVariable ("id") Long id,
+                                         @RequestHeader(value = "Authorization", required = false) String authorization) {
+        
+        TokenValidationResponse validation = tokenValidationService.validateAdminToken(authorization);
+        
+        if (!validation.isValid() || !validation.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only administrators can delete products. " + validation.getMessage());
+        }
+        
         productService.deleteProduct(id);
+        return ResponseEntity.ok().build();
     }
-
-
 }
